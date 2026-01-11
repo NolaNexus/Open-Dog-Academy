@@ -1,0 +1,694 @@
+diff --git a/.github/workflows/pages.yml b/.github/workflows/pages.yml
+index 936132c..787c07d 100644
+--- a/.github/workflows/pages.yml
++++ b/.github/workflows/pages.yml
+@@ -29,10 +29,14 @@ jobs:
+           python -m pip install --upgrade pip
+           pip install -r requirements.txt
+ 
+-      - name: Generate pages + run checks
++      - name: Generate + validate
+         run: |
+           python scripts/run_checks.py
+ 
++      - name: Ensure generated docs are committed
++        run: |
++          git diff --exit-code
++
+       - name: Build MkDocs site
+         run: mkdocs build --strict --site-dir site
+ 
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+new file mode 100644
+index 0000000..a079eb1
+--- /dev/null
++++ b/.pre-commit-config.yaml
+@@ -0,0 +1,9 @@
++repos:
++  - repo: https://github.com/pre-commit/pre-commit-hooks
++    rev: v4.6.0
++    hooks:
++      - id: end-of-file-fixer
++      - id: trailing-whitespace
++      - id: check-yaml
++      - id: check-added-large-files
++        args: ["--maxkb=500"]
+diff --git a/README.md b/README.md
+index 4be706c..83b6920 100644
+--- a/README.md
++++ b/README.md
+@@ -1,20 +1,44 @@
+-# Open Dog Academy (Template Skeleton)
++# Open Dog Academy (Rebuild)
+ 
+-This repository is a **clean-room rebuild** template for Open Dog Academy-style documentation:
+-- MkDocs (Material) site
+-- Atomic content blocks ("atoms") + assembled skills/classes
+-- Deterministic catalog generation (JSON + SQLite-ready pipeline stub)
+-- GitHub Pages deploy via GitHub Actions (artifact → deploy)
++A **docs-as-code** dog-training knowledge base designed to stay:
++- small
++- deterministic
++- automation-friendly
+ 
+-## Quick start (local)
++## Documentation model
++We use the Diátaxis separation of documentation types:
++- **Tutorials** (learning-oriented)
++- **How-to** (task-oriented; skills)
++- **Reference** (facts; standards and rules)
++- **Explanation** (why; background)
++
++This reduces drift by keeping each page focused on a single user need. citeturn0search4turn0search0
++
++## Automation model
++- **Atoms** live in `docs/_atoms/`
++- Overview pages are **generated** into `docs/_generated/` using Material card grids. citeturn0search2
++
++Run generation:
++```bash
++python scripts/generate_cards.py
++```
++
++## Local quick start
+ ```bash
+ python -m venv .venv
+-source .venv/bin/activate  # Windows: .venv\Scripts\activate
++source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+ pip install -r requirements.txt
++python scripts/generate_cards.py
+ mkdocs serve
+ ```
+ 
+-## Repo conventions
+-- Authoritative standards live in `docs/standards/`
+-- Reusable blocks live in `docs/_atoms/`
+-- Pages that list many things are generated into `docs/_generated/` (do not hand-edit)
++## Pre-commit (recommended)
++Install and enable hooks (keeps the repo clean):
++```bash
++pip install pre-commit
++pre-commit install
++pre-commit run --all-files
++```
++
++## GitHub Pages
++Deployment uses GitHub Actions with `upload-pages-artifact` → `deploy-pages`. citeturn0search19turn0search15
+diff --git a/docs/_generated/atoms/index.md b/docs/_generated/atoms/index.md
+index bf64a43..e1b1b33 100644
+--- a/docs/_generated/atoms/index.md
++++ b/docs/_generated/atoms/index.md
+@@ -1,3 +1,13 @@
+-# Atom index (generated)
++# Atoms
+ 
+-Run `python scripts/generate_cards.py`.
++This page is generated. Do not edit by hand.
++
++## protocol
++
++<div class="grid cards" markdown>
++
++-   **[Teaching steps (default)](../_atoms/protocols/teaching-steps-default-001.md)**
++
++    `ATOM_TEACHING_STEPS_DEFAULT_001`
++
++</div>
+diff --git a/docs/_generated/skills/index.md b/docs/_generated/skills/index.md
+new file mode 100644
+index 0000000..d80f2e5
+--- /dev/null
++++ b/docs/_generated/skills/index.md
+@@ -0,0 +1,3 @@
++# Skills
++
++This page is generated. Do not edit by hand.
+diff --git a/docs/explanation/index.md b/docs/explanation/index.md
+new file mode 100644
+index 0000000..b39c30b
+--- /dev/null
++++ b/docs/explanation/index.md
+@@ -0,0 +1,8 @@
++# Explanation
++
++Explanation answers **why**.
++
++Use this section for:
++- rationale behind methods
++- background theory
++- tradeoffs and constraints
+diff --git a/docs/ops/footprint-rules.md b/docs/ops/footprint-rules.md
+new file mode 100644
+index 0000000..d446498
+--- /dev/null
++++ b/docs/ops/footprint-rules.md
+@@ -0,0 +1,9 @@
++# Footprint rules
++
++This project stays small by default.
++
++## Rules
++- Do not commit large binaries (PDFs, videos, archives). Use Releases or external storage.
++- Keep dependencies minimal.
++- Generated docs belong only in `docs/_generated/`.
++- Never commit `site/` output.
+diff --git a/docs/reference/content-contract.md b/docs/reference/content-contract.md
+new file mode 100644
+index 0000000..7466bed
+--- /dev/null
++++ b/docs/reference/content-contract.md
+@@ -0,0 +1,46 @@
++# Content contract
++
++This project stays stable by treating content as structured data.
++
++## Required doc types
++We follow the Diátaxis model (tutorials / how-to / reference / explanation) to avoid mixing incompatible purposes on one page. citeturn0search4turn0search0
++
++## Atom schema
++Atoms are reusable building blocks stored under `docs/_atoms/`.
++
++Every atom **must** include YAML front matter:
++
++```yaml
++---
++id: ATOM_SOMETHING_001
++title: Human readable title
++type: protocol | rubric | safety | template | checklist
++tags: [foundations, ...]
++---
++```
++
++### Rules
++- `id` is unique across the repo
++- atoms are short (prefer composition)
++- atoms do not embed large binaries
++
++## Skill schema
++Skills are how-to guides stored under `docs/skills/`.
++
++Every skill **must** include YAML front matter:
++
++```yaml
++---
++id: SKILL_OB_NAME
++title: Name game
++level: 0
++kind: skill
++tags: [core10, foundations]
++uses_atoms: [ATOM_TEACHING_STEPS_DEFAULT_001]
++---
++```
++
++### Rules
++- skill pages contain **only** skill-specific content
++- repeated blocks become atoms
++- pass criteria are measurable (latency/distance/duration/distraction)
+diff --git a/docs/reference/definition-of-done.md b/docs/reference/definition-of-done.md
+new file mode 100644
+index 0000000..18c65d4
+--- /dev/null
++++ b/docs/reference/definition-of-done.md
+@@ -0,0 +1,17 @@
++# Definition of done
++
++We treat each change like engineering work: it is "done" when measurable checks pass.
++
++## This step is done when
++
++### Repo-level completion metrics
++- ✅ `mkdocs build --strict` succeeds locally and in CI
++- ✅ `python scripts/generate_cards.py` produces no uncommitted diffs (`git diff --exit-code` is clean)
++- ✅ Front matter validates for atoms and skills (`python scripts/validate_front_matter.py`)
++- ✅ No large files slipped in (pre-commit `check-added-large-files` gate)
++
++### Content-level completion metrics
++- ✅ New/changed docs match the Diátaxis intent (tutorial/how-to/reference/explanation)
++- ✅ Any new repeated text is extracted into an atom
++
++If any metric fails, this step is **not** done; fix or refine until green.
+diff --git a/docs/skills/index.md b/docs/skills/index.md
+index 5ba36a7..9d2eab1 100644
+--- a/docs/skills/index.md
++++ b/docs/skills/index.md
+@@ -1,3 +1,8 @@
+-# Skills
++# Skills (how-to)
+ 
+-Skill assemblies live here.
++Skills are **task-oriented** pages: they show you how to train one thing.
++
++- Repeated patterns belong in atoms.
++- Overview pages are generated.
++
++See: [Skills (generated)](../_generated/skills/index.md)
+diff --git a/docs/tutorials/index.md b/docs/tutorials/index.md
+new file mode 100644
+index 0000000..84cbf58
+--- /dev/null
++++ b/docs/tutorials/index.md
+@@ -0,0 +1,10 @@
++# Tutorials
++
++Tutorials are **learning-oriented**: you follow them to build skill and confidence.
++
++Start here when you are new, or when you need a guided, end-to-end path.
++
++## What belongs here
++- Onboarding sequences
++- "First week" plans
++- Guided practice flows
+diff --git a/mkdocs.yml b/mkdocs.yml
+index 4342988..b7d5ec0 100644
+--- a/mkdocs.yml
++++ b/mkdocs.yml
+@@ -1,4 +1,5 @@
+ site_name: Open Dog Academy
++# Set this to your actual deployed URL (GH Pages or custom domain)
+ site_url: https://example.github.io/open-dog-academy/
+ repo_url: https://github.com/OWNER/REPO
+ edit_uri: edit/main/docs/
+@@ -25,12 +26,26 @@ markdown_extensions:
+ 
+ nav:
+   - Home: index.md
+-  - Standards:
+-      - Overview: standards/index.md
+-      - Welfare: standards/welfare.md
++
++  - Tutorials:
++      - Start here: tutorials/index.md
++
++  - How-to:
++      - Skills overview: skills/index.md
++      - Skills (generated): _generated/skills/index.md
++
++  - Reference:
++      - Standards: standards/index.md
++      - Welfare baseline: standards/welfare.md
++      - Content contract: reference/content-contract.md
++      - Definition of done: reference/definition-of-done.md
++
++  - Explanation:
++      - Why this works: explanation/index.md
++
+   - Atoms:
+-      - Index: _generated/atoms/index.md
+-  - Skills:
+-      - Overview: skills/index.md
++      - Atom index (generated): _generated/atoms/index.md
++
+   - Ops:
+       - Repo hygiene: ops/repo-hygiene.md
++      - Footprint rules: ops/footprint-rules.md
+diff --git a/scripts/generate_cards.py b/scripts/generate_cards.py
+old mode 100644
+new mode 100755
+index 6d06f35..23c9e04
+--- a/scripts/generate_cards.py
++++ b/scripts/generate_cards.py
+@@ -1,20 +1,42 @@
+ #!/usr/bin/env python3
+-"""Generate docs/_generated/atoms/index.md from docs/_atoms/*.
++"""Generate Material-card indexes for atoms and skills.
+ 
+-Where to run:
+-- repo root: `python scripts/generate_cards.py`
++Outputs:
++- docs/_generated/atoms/index.md
++- docs/_generated/skills/index.md
++
++Design goals:
++- deterministic output
++- minimal dependencies (PyYAML only)
++- indexes are machine-owned and must be committed
+ """
+ 
+ from __future__ import annotations
++
++from dataclasses import dataclass
+ from pathlib import Path
+ import re
++from typing import Iterable
++
+ import yaml
+ 
+ RE_FM = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)\Z", re.S)
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+-ATOMS_DIR = ROOT / "docs" / "_atoms"
+-OUT = ROOT / "docs" / "_generated" / "atoms" / "index.md"
++DOCS = ROOT / "docs"
++ATOMS_DIR = DOCS / "_atoms"
++SKILLS_DIR = DOCS / "skills"
++OUT_ATOMS = DOCS / "_generated" / "atoms" / "index.md"
++OUT_SKILLS = DOCS / "_generated" / "skills" / "index.md"
++
++
++@dataclass(frozen=True)
++class CardItem:
++    group: str
++    title: str
++    href: str
++    subtitle: str = ""
++
+ 
+ def parse_front_matter(text: str) -> dict:
+     m = RE_FM.match(text)
+@@ -22,8 +44,24 @@ def parse_front_matter(text: str) -> dict:
+         return {}
+     return yaml.safe_load(m.group(1)) or {}
+ 
+-def main() -> None:
+-    items = []
++
++def doc_href(from_dir: Path, target_doc: Path) -> str:
++    # link from generated page directory (e.g. docs/_generated/atoms/) to target under docs/
++    rel = target_doc.relative_to(DOCS)
++    prefix = "../"  # _generated/<x>/ is one level below docs/
++    return prefix + str(rel).replace("\\", "/")
++
++
++def iter_markdown(dir_path: Path) -> Iterable[Path]:
++    for p in sorted(dir_path.rglob("*.md")):
++        if p.name.startswith("_") and p.parent == dir_path:
++            # keep root-level internal docs out if needed
++            pass
++        yield p
++
++
++def build_atoms() -> list[CardItem]:
++    items: list[CardItem] = []
+     for path in sorted(ATOMS_DIR.rglob("*.md")):
+         if path.name == "README.md":
+             continue
+@@ -31,27 +69,61 @@ def main() -> None:
+         title = fm.get("title") or path.stem
+         atom_id = fm.get("id") or ""
+         atom_type = fm.get("type") or "atom"
+-        rel_doc = path.relative_to(ROOT / "docs")
+-        href = "../" + str(rel_doc).replace("\\", "/")
+-        items.append((atom_type, title, href, atom_id))
+-
+-    by_type = {}
+-    for t, title, href, atom_id in items:
+-        by_type.setdefault(t, []).append((title, href, atom_id))
+-
+-    OUT.parent.mkdir(parents=True, exist_ok=True)
+-    lines = []
+-    lines.append("# Atoms\n")
+-    lines.append("This page is generated. Do not edit by hand.\n")
+-    for t in sorted(by_type.keys()):
+-        lines.append(f"## {t}\n")
+-        lines.append("<div class=\"grid cards\" markdown>\n")
+-        for title, href, atom_id in by_type[t]:
+-            subtitle = f"`{atom_id}`" if atom_id else ""
+-            lines.append(f"-   **[{title}]({href})**\n\n    {subtitle}\n")
++        href = doc_href(OUT_ATOMS.parent, path)
++        subtitle = f"`{atom_id}`" if atom_id else ""
++        items.append(CardItem(group=str(atom_type), title=str(title), href=href, subtitle=subtitle))
++    return items
++
++
++def build_skills() -> list[CardItem]:
++    items: list[CardItem] = []
++    if not SKILLS_DIR.exists():
++        return items
++
++    for path in sorted(SKILLS_DIR.rglob("*.md")):
++        if path.name == "index.md":
++            continue
++        fm = parse_front_matter(path.read_text(encoding="utf-8"))
++        title = fm.get("title") or path.stem
++        skill_id = fm.get("id") or ""
++        level = fm.get("level")
++        group = f"level {level}" if level is not None else "skills"
++        href = doc_href(OUT_SKILLS.parent, path)
++        subtitle = f"`{skill_id}`" if skill_id else ""
++        items.append(CardItem(group=group, title=str(title), href=href, subtitle=subtitle))
++    return items
++
++
++def render_cards(title: str, items: list[CardItem]) -> str:
++    by_group: dict[str, list[CardItem]] = {}
++    for it in items:
++        by_group.setdefault(it.group, []).append(it)
++
++    lines: list[str] = [f"# {title}\n", "This page is generated. Do not edit by hand.\n"]
++
++    for group in sorted(by_group.keys()):
++        lines.append(f"## {group}\n")
++        lines.append('<div class="grid cards" markdown>\n')
++        for it in by_group[group]:
++            lines.append(f"-   **[{it.title}]({it.href})**\n\n    {it.subtitle}\n")
+         lines.append("</div>\n")
+-    OUT.write_text("\n".join(lines), encoding="utf-8")
+-    print(f"Wrote {OUT}")
++
++    return "\n".join(lines)
++
++
++def main() -> None:
++    atoms = build_atoms()
++    skills = build_skills()
++
++    OUT_ATOMS.parent.mkdir(parents=True, exist_ok=True)
++    OUT_SKILLS.parent.mkdir(parents=True, exist_ok=True)
++
++    OUT_ATOMS.write_text(render_cards("Atoms", atoms), encoding="utf-8")
++    OUT_SKILLS.write_text(render_cards("Skills", skills), encoding="utf-8")
++
++    print(f"Wrote {OUT_ATOMS}")
++    print(f"Wrote {OUT_SKILLS}")
++
+ 
+ if __name__ == "__main__":
+     main()
+diff --git a/scripts/run_checks.py b/scripts/run_checks.py
+old mode 100644
+new mode 100755
+index e043e09..60c7919
+--- a/scripts/run_checks.py
++++ b/scripts/run_checks.py
+@@ -1,17 +1,25 @@
+ #!/usr/bin/env python3
+-"""Minimal repo checks (expand later)."""
++"""Repo checks.
++
++Keep this small and strict:
++- generated indexes exist and are current
++- front matter validates for atoms and skills
++"""
++
+ from __future__ import annotations
++
+ from pathlib import Path
+ import subprocess
+ import sys
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+-GEN = ROOT / "docs" / "_generated" / "atoms" / "index.md"
++
+ 
+ def main() -> int:
+-    if not GEN.exists():
+-        subprocess.check_call([sys.executable, str(ROOT/"scripts"/"generate_cards.py")])
++    subprocess.check_call([sys.executable, str(ROOT / "scripts" / "generate_cards.py")])
++    subprocess.check_call([sys.executable, str(ROOT / "scripts" / "validate_front_matter.py")])
+     return 0
+ 
++
+ if __name__ == "__main__":
+     raise SystemExit(main())
+diff --git a/scripts/validate_front_matter.py b/scripts/validate_front_matter.py
+new file mode 100755
+index 0000000..f67183b
+--- /dev/null
++++ b/scripts/validate_front_matter.py
+@@ -0,0 +1,79 @@
++#!/usr/bin/env python3
++"""Validate YAML front matter for atoms and skills.
++
++Goal: catch drift early and keep generation reliable.
++
++Rules:
++- Atoms require: id, title, type
++- Skills require: id, title, level
++
++Exit non-zero on any error.
++"""
++
++from __future__ import annotations
++
++from pathlib import Path
++import re
++import sys
++
++import yaml
++
++RE_FM = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)\Z", re.S)
++
++ROOT = Path(__file__).resolve().parents[1]
++DOCS = ROOT / "docs"
++ATOMS_DIR = DOCS / "_atoms"
++SKILLS_DIR = DOCS / "skills"
++
++
++def parse_front_matter(path: Path) -> dict:
++    text = path.read_text(encoding="utf-8")
++    m = RE_FM.match(text)
++    if not m:
++        return {}
++    return yaml.safe_load(m.group(1)) or {}
++
++
++def err(msg: str) -> None:
++    print(msg, file=sys.stderr)
++
++
++def validate_atoms() -> int:
++    rc = 0
++    if not ATOMS_DIR.exists():
++        return 0
++    for p in sorted(ATOMS_DIR.rglob("*.md")):
++        if p.name == "README.md":
++            continue
++        fm = parse_front_matter(p)
++        missing = [k for k in ("id", "title", "type") if not fm.get(k)]
++        if missing:
++            rc = 1
++            err(f"Atom missing {missing}: {p}")
++    return rc
++
++
++def validate_skills() -> int:
++    rc = 0
++    if not SKILLS_DIR.exists():
++        return 0
++    for p in sorted(SKILLS_DIR.rglob("*.md")):
++        if p.name == "index.md":
++            continue
++        fm = parse_front_matter(p)
++        missing = [k for k in ("id", "title", "level") if fm.get(k) in (None, "")]
++        if missing:
++            rc = 1
++            err(f"Skill missing {missing}: {p}")
++    return rc
++
++
++def main() -> int:
++    rc = 0
++    rc |= validate_atoms()
++    rc |= validate_skills()
++    return rc
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/templates/explanation.md b/templates/explanation.md
+new file mode 100644
+index 0000000..66fee13
+--- /dev/null
++++ b/templates/explanation.md
+@@ -0,0 +1,17 @@
++---
++id: {{ID}}
++title: {{TITLE}}
++kind: explanation
++tags: [explanation]
++---
++
++# {{TITLE}}
++
++## Why this matters
++
++## How it works
++
++## Tradeoffs
++
++## Further reading
++- 
+diff --git a/templates/howto.md b/templates/howto.md
+new file mode 100644
+index 0000000..917f253
+--- /dev/null
++++ b/templates/howto.md
+@@ -0,0 +1,25 @@
++---
++id: {{ID}}
++title: {{TITLE}}
++kind: howto
++level: 0
++tags: [howto]
++uses_atoms: [ATOM_TEACHING_STEPS_DEFAULT_001]
++---
++
++# {{TITLE}}
++
++## Outcome
++What changes when this is complete.
++
++## Prerequisites
++- 
++
++## Steps
++1. 
++
++## Troubleshooting
++- 
++
++## References
++- 
+diff --git a/templates/reference.md b/templates/reference.md
+new file mode 100644
+index 0000000..92f0ad2
+--- /dev/null
++++ b/templates/reference.md
+@@ -0,0 +1,17 @@
++---
++id: {{ID}}
++title: {{TITLE}}
++kind: reference
++tags: [reference]
++---
++
++# {{TITLE}}
++
++## Summary
++Facts only. No narrative.
++
++## Details
++- 
++
++## Related
++- 
+diff --git a/templates/tutorial.md b/templates/tutorial.md
+new file mode 100644
+index 0000000..67a8878
+--- /dev/null
++++ b/templates/tutorial.md
+@@ -0,0 +1,24 @@
++---
++id: {{ID}}
++title: {{TITLE}}
++kind: tutorial
++level: 0
++tags: [tutorial]
++---
++
++# {{TITLE}}
++
++## Goal
++What you will be able to do by the end.
++
++## Prerequisites
++- 
++
++## Steps
++1. 
++
++## Check yourself
++- 
++
++## Next
++Where to go from here.
