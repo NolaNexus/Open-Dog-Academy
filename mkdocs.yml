@@ -58,7 +58,6 @@ nav:
   - Tasks v3: research/tasks_v3/task_s1.md
 - Ops:
   - Dev Workflow: ops/dev-workflow.md
-  - GitHub Pages Settings: ops/github-pages-settings.md
   - Truncation Workarounds: ops/truncation-workarounds.md
   - Core 10 Conversion Tracker: ops/core-10-conversion.md
   - Profiles + Household Specs: ops/profile-storage.md
