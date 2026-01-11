@@ -1,6 +1,6 @@
 site_name: Open Dog Academy
-site_url: https://example.github.io/open-dog-academy/
-repo_url: https://github.com/OWNER/REPO
+site_url: https://nolanexus.github.io/Open-Dog-Academy/
+repo_url: https://github.com/NolaNexus/Open-Dog-Academy
 edit_uri: edit/main/docs/
 
 theme:
@@ -25,12 +25,23 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Standards:
-      - Overview: standards/index.md
-      - Welfare: standards/welfare.md
-  - Atoms:
-      - Index: _generated/atoms/index.md
-  - Skills:
-      - Overview: skills/index.md
+
+  - Tutorials:
+      - Overview: tutorials/index.md
+
+  - How-to:
+      - Skills index: _generated/skills/index.md
+      - Skills overview: skills/index.md
+
+  - Reference:
+      - Overview: reference/content-contract.md
+      - Definition of Done: reference/definition-of-done.md
+
+  - Explanation:
+      - Overview: explanation/index.md
+
   - Ops:
-      - Repo hygiene: ops/repo-hygiene.md
+      - Footprint rules: ops/footprint-rules.md
+
+  - Atoms:
+      - Atoms index: _generated/atoms/index.md
